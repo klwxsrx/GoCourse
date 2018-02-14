@@ -6,9 +6,10 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"path/filepath"
 )
 
-const videoUploadPath = "content/"
+const videoUploadPath = "content"
 const videoFileName = "index.mp4"
 
 func UploadVideo(video *model.Video, file multipart.File) (string, string, error) {
@@ -28,21 +29,24 @@ func UploadVideo(video *model.Video, file multipart.File) (string, string, error
 }
 
 func createFolder(folderPath string) error {
-	return os.Mkdir(folderPath, os.ModeDir)
+	return os.Mkdir(folderPath, os.ModePerm)
 }
 
 func saveVideo(file multipart.File, contentPath string) error {
-	fileTo, _ := os.OpenFile(contentPath, os.O_RDWR|os.O_CREATE, 0666)
-	_, err := io.Copy(fileTo, file)
+	fileTo, err := os.OpenFile(contentPath, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(fileTo, file)
 	return err
 }
 
 func getFolderPath(key string) string {
-	return videoUploadPath + key
+	return filepath.Join(videoUploadPath, key)
 }
 
 func getContentPath(key string) string {
-	return getFolderPath(key) + "/" + videoFileName
+	return filepath.Join(getFolderPath(key), videoFileName)
 }
 
 func getThumbnailUrl(_ string) string {

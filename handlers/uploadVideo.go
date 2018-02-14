@@ -28,7 +28,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, vr VideoRepository) {
 		http.Error(w, "", http.StatusInternalServerError)
 
 		video.Status = model.StatusError
-		if vr.Save(video); err != nil {
+		if err = vr.Save(video); err != nil {
 			log.WithField("err", err).Error("update video status to error in database failed")
 		}
 
