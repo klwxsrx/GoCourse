@@ -3,35 +3,29 @@ package handlers
 import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	"gocourse/view"
 	"io"
 	"net/http"
 )
 
-func list(w http.ResponseWriter, _ *http.Request) {
-	items := []VideoInfo{
-		{
-			"d290f1ee-6c54-4b01-90e6-d701748f0851",
-			"Black Retrospective Woman",
-			15,
-			"/content/d290f1ee-6c54-4b01-90e6-d701748f0851/screen.jpg",
-		},
-		{
-			"sldjfl34-dfgj-523k-jk34-5jk3j45klj34",
-			"Go Rally TEASER-HD",
-			41,
-			"/content/sldjfl34-dfgj-523k-jk34-5jk3j45klj34/screen.jpg",
-		},
-		{
-			"hjkhhjk3-23j4-j45k-erkj-kj3k4jl2k345",
-			"Танцор",
-			92,
-			"/content/hjkhhjk3-23j4-j45k-erkj-kj3k4jl2k345/screen.jpg",
-		},
+func list(w http.ResponseWriter, _ *http.Request, r VideoRepository) {
+	videos, err := r.GetAll()
+	if err != nil {
+		log.WithField("err", err).Error("get videos error")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	var items []*view.VideoInfo
+	for _, video := range videos {
+		items = append(items, view.GetVideoInfoFromVideo(video))
 	}
 
 	b, err := json.Marshal(items)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.WithField("err", err).Error("json marshall error")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8;")

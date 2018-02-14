@@ -3,27 +3,32 @@ package handlers
 import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"gocourse/model"
 	"net/http"
 )
 
-type VideoItem struct {
-	VideoInfo
-	Url string `json:"url"`
-}
-
-type VideoInfo struct {
-	Id        string `json:"id"`
-	Name      string `json:"name"`
-	Duration  int    `json:"duration"`
-	Thumbnail string `json:"thumbnail"`
+type VideoRepository interface {
+	GetByKey(string) (*model.Video, error)
+	GetAll() ([]*model.Video, error)
+	Save(*model.Video) error
 }
 
 func Router() http.Handler {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
-	s.HandleFunc("/list", list).Methods(http.MethodGet)
-	s.HandleFunc("/video/d290f1ee-6c54-4b01-90e6-d701748f0851", video).Methods(http.MethodGet)
+
+	s.HandleFunc("/list", videosHandler(list)).Methods(http.MethodGet)
+	s.HandleFunc("/video/{id:[\\w-]+}", videosHandler(video)).Methods(http.MethodGet)
+	s.HandleFunc("/video", videosHandler(uploadVideo)).Methods(http.MethodPost)
+
 	return logMiddleware(r)
+}
+
+func videosHandler(f func(http.ResponseWriter, *http.Request, VideoRepository)) func(http.ResponseWriter, *http.Request) {
+	vr := model.NewVideoRepository()
+	return func(w http.ResponseWriter, r *http.Request) {
+		f(w, r, vr)
+	}
 }
 
 func logMiddleware(h http.Handler) http.Handler {

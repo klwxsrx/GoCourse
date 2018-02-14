@@ -2,29 +2,38 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"gocourse/view"
 	"io"
 	"net/http"
 )
 
-func video(w http.ResponseWriter, _ *http.Request) {
-	/*
-		vars := mux.Vars(r)
-		id := vars["ID"]
-	*/
-
-	item := VideoItem{
-		VideoInfo{
-			"d290f1ee-6c54-4b01-90e6-d701748f0851",
-			"Black Retrospective Woman",
-			15,
-			"/content/d290f1ee-6c54-4b01-90e6-d701748f0851/screen.jpg",
-		},
-		"/content/d290f1ee-6c54-4b01-90e6-d701748f0851/index.mp4",
+func video(w http.ResponseWriter, r *http.Request, vr VideoRepository) {
+	vars := mux.Vars(r)
+	videoKey := vars["id"]
+	if videoKey == "" {
+		http.Error(w, "missing id value", http.StatusBadRequest)
+		return
 	}
+
+	video, err := vr.GetByKey(videoKey)
+	if err != nil {
+		log.WithField("err", err).Error("get video error")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	if video == nil {
+		http.Error(w, "", http.StatusNotFound)
+		return
+	}
+
+	item := view.GetVideoItemFromVideo(video)
 	b, err := json.Marshal(item)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8;")

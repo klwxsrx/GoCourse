@@ -4,10 +4,12 @@ import (
 	"context"
 	log "github.com/sirupsen/logrus"
 	"gocourse/handlers"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -17,6 +19,8 @@ func main() {
 		log.SetOutput(file)
 	}
 	defer file.Close()
+
+	rand.Seed(time.Now().UnixNano())
 
 	killSignalChan := getKillSignalChan()
 	srv := startServer(":8000")
